@@ -1,0 +1,13 @@
+{
+    "name": "api-lookup-pks",
+    "description": "Network profile using API lookup mode",
+    "parameters": {
+      "nodes_dns": [
+        "0.0.0.0", "0.0.0.0"
+        ],		    
+      "fip_pool_ids": [
+        "<pool_id>"
+        ],
+      "dns_lookup_mode": "API"
+    }
+}
