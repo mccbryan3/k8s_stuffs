@@ -2,17 +2,17 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-    name: redis-server
+  name: redis-server
 spec:
-    replicas: 3
-    template:
+  replicas: 3
+  template:
     metadata:
-        labels:
+      labels:
         app: redis-server
         tier: cache
     spec:
-        containers:
-        - name: redis-server
+      containers:
+      - name: redis-server
         image: redis:4.0.2
         ports:
         - containerPort: 6379
@@ -20,138 +20,138 @@ spec:
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-    name: yelb-db
+  name: yelb-db
 spec:
-    replicas: 3
-    template:
+  replicas: 3
+  template:
     metadata:
-        labels:
+      labels:
         app: yelb-db
         tier: backenddb
     spec:
-        securityContext:
+      securityContext:
         runAsUser: 0
-        containers:
-        - name: yelb-db
+      containers:
+      - name: yelb-db
         image:  mreferre/yelb-db:0.5
         securityContext:
-            privileged: true
+          privileged: true
         ports:
         - containerPort: 5432
 ---
-# Web Frontend Deployment Spec
-apiVersion: extensions/v1beta1
-kind: Deployment
-metadata:
-    name: yelb-ui
-spec:
-    replicas: 3
-    template:
+    # Web Frontend Deployment Spec
+    apiVersion: extensions/v1beta1
+    kind: Deployment
     metadata:
-        labels:
-        app: yelb-ui
-        tier: frontend
+      name: yelb-ui
     spec:
-        securityContext:
-        runAsUser: 0
-        containers:
-        - name: yelb-ui
-        image: mreferre/yelb-ui
-        securityContext:
-            privileged: true
-        ports:
-        - containerPort: 80
+      replicas: 3
+      template:
+        metadata:
+          labels:
+            app: yelb-ui
+            tier: frontend
+        spec:
+          securityContext:
+            runAsUser: 0
+          containers:
+          - name: yelb-ui
+            image: mreferre/yelb-ui
+            securityContext:
+              privileged: true
+            ports:
+            - containerPort: 80
 ---
-# App middleware Deployment Spec
-apiVersion: extensions/v1beta1
-kind: Deployment
-metadata:
-    name: yelb-appserver
-spec:
-    replicas: 3
-    template:
+    # App middleware Deployment Spec
+    apiVersion: extensions/v1beta1
+    kind: Deployment
     metadata:
-        labels:
-        app: yelb-appserver
-        tier: middletier
-        # Note the secgroup Label, it will be used to match firewall in the ruleset
+      name: yelb-appserver
     spec:
-        containers:
-        - name: yelb-appserver
-        image: yfauser/yelb-appserver
-        ports:
-        - containerPort: 4567
+      replicas: 3
+      template:
+        metadata:
+          labels:
+            app: yelb-appserver
+            tier: middletier
+            # Note the secgroup Label, it will be used to match firewall in the ruleset
+        spec:
+          containers:
+          - name: yelb-appserver
+            image: yfauser/yelb-appserver
+            ports:
+            - containerPort: 4567
 ---            
 # This should work on Kubernetes deployments that have LoadBalancer support
 apiVersion: v1
 kind: Service
 metadata:
-name: redis-server
-labels:
-app: redis-server
-tier: cache
+  name: redis-server
+  labels:
+    app: redis-server
+    tier: cache
 spec:
-type: ClusterIP
-ports:
-- port: 6379
-selector:
-app: redis-server
-tier: cache
+  type: ClusterIP
+  ports:
+  - port: 6379
+  selector:
+    app: redis-server
+    tier: cache
 ---
 apiVersion: v1
 kind: Service
 metadata:
-name: yelb-db
-labels:
-app: yelb-db
-tier: backenddb
+  name: yelb-db
+  labels:
+    app: yelb-db
+    tier: backenddb
 spec:
-type: ClusterIP
-ports:
-- port: 5432
-selector:
-app: yelb-db
-tier: backenddb
+  type: ClusterIP
+  ports:
+  - port: 5432
+  selector:
+    app: yelb-db
+    tier: backenddb
 ---
-# K8s App Server Svc
-apiVersion: v1
-kind: Service
-metadata:
-    name: yelb-appserver
-    labels:
-    app: yelb-appserver
-    tier: middletier
-spec:
-    type: ClusterIP
-    ports:
-    - port: 4567
-    selector:
-    app: yelb-appserver
-    tier: middletier
----
-# K8s Web Frontend Svc
-apiVersion: v1
-kind: Service
-metadata:
-    name: yelb-ui
-    labels:
-    app: yelb-ui
-    tier: frontend
-spec:
-    type: ClusterIP
-    ports:
-    - port: 80
-    selector:
-    app: yelb-ui
-    tier: frontend
----
-# Route
-apiVersion: v1
-kind: Route
-metadata:
-    name: yelb-ui-route
-spec:
-    host: yelb.apps.<cluster_name>
-    to:
+    # K8s App Server Svc
+    apiVersion: v1
     kind: Service
-    name: yelb-ui
+    metadata:
+      name: yelb-appserver
+      labels:
+        app: yelb-appserver
+        tier: middletier
+    spec:
+      type: ClusterIP
+      ports:
+      - port: 4567
+      selector:
+        app: yelb-appserver
+        tier: middletier
+---
+    # K8s Web Frontend Svc
+    apiVersion: v1
+    kind: Service
+    metadata:
+      name: yelb-ui
+      labels:
+        app: yelb-ui
+        tier: frontend
+    spec:
+      type: ClusterIP
+      ports:
+      - port: 80
+      selector:
+        app: yelb-ui
+        tier: frontend
+---
+    # Route for N/S Load-Balancing
+    apiVersion: v1
+    kind: Route
+    metadata:
+      name: yelb-ui-route
+    spec:
+      host: yelb.apps.ocp4-01.nsx-lab.loc
+      to:
+        kind: Service
+        name: yelb-ui
