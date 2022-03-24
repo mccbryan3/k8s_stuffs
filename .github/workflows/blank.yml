@@ -8,6 +8,9 @@ jobs:
     env:
       SCAN_PATH: "." # Set the relative path in the repo to scan
       POLICY: "Default IaC policy" # Set the desired Wiz-cli policy to use
+      WIZ_CLIENT_ID: ${{ secrets.WIZ_CLIENT_ID }}
+      WIZ_CLIENT_SECRET: ${{ secrets.WIZ_CLIENT_SECRET }}
+      WIZ_ENV: ${{ secrets.WIZ_ENV }}
 
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
@@ -24,11 +27,6 @@ jobs:
 
     - name: Authenticate to Wiz
       run: ./wizcli auth --id "$WIZ_CLIENT_ID" --secret "$WIZ_CLIENT_SECRET"
-      env:
-        WIZ_CLIENT_ID: ${{ secrets.WIZ_CLIENT_ID }}
-        WIZ_CLIENT_SECRET: ${{ secrets.WIZ_CLIENT_SECRET }}
-        WIZ_ENV: ${{ secrets.WIZ_ENV }}
-        WIZ_DIR: "."
 
     - name: Run wiz-cli IaC scan
       run: |
